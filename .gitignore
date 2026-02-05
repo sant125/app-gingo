@@ -1,0 +1,15 @@
+# Binary
+gin-tattoo
+main
+
+# Env
+.env
+*.env
+
+# Go
+vendor/
+
+# IDE
+.idea/
+.vscode/
+*.swp

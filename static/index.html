@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Gin Tattoo — Estilos & Curiosidades</title>
+  <link rel="stylesheet" href="/static/style.css" />
+</head>
+<body>
+  <header>
+    <h1>&#9733; Gin Tattoo</h1>
+    <p class="subtitle">Estilos e curiosidades do universo da tatuagem</p>
+    <a class="swagger-link" href="/swagger/index.html" target="_blank">&#128196; Swagger UI</a>
+  </header>
+
+  <main>
+    <section id="styles-section">
+      <h2>Estilos de Tatuagem</h2>
+      <div id="styles-grid" class="grid">
+        <p class="loading">Carregando...</p>
+      </div>
+    </section>
+
+    <section id="curiosities-section">
+      <h2>Curiosidades</h2>
+      <div id="curiosities-list" class="list">
+        <p class="loading">Carregando...</p>
+      </div>
+    </section>
+  </main>
+
+  <!-- Modal -->
+  <div id="modal" class="modal hidden">
+    <div class="modal-content">
+      <button class="close-btn" id="modal-close">&times;</button>
+      <div id="modal-body"></div>
+    </div>
+  </div>
+
+  <footer>
+    <p>Powered by <strong>Go + Gin</strong> &nbsp;|&nbsp; <a href="/swagger/index.html">API Docs</a></p>
+  </footer>
+
+  <script src="/static/app.js"></script>
+</body>
+</html>

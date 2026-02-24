@@ -1,0 +1,219 @@
+# .github/workflows/ci.yml — gin-tattoo
+# Referência: este arquivo vai na raiz do repositório sant125/gin-tattoo
+#
+# Fluxo por branch:
+#   feature/*  → lint · test · vuln · sonar · quality gate
+#   developer  → tudo acima + build → ECR + update manifest + ZAP (homolog)
+#   main       → tudo acima (sem ZAP) + update manifest → prod
+
+name: CI/CD
+
+on:
+  push:
+    branches:
+      - main
+      - developer
+      - 'feature/**'
+
+permissions:
+  id-token: write  # necessário para OIDC com AWS
+  contents: read
+
+env:
+  ECR_URL: 123456789012.dkr.ecr.us-east-1.amazonaws.com/projetin-app
+  AWS_REGION: us-east-1
+
+jobs:
+
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: golangci-lint
+        run: |
+          go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest
+          golangci-lint run --out-format json > lint-report.json 2>&1 || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lint-report
+          path: lint-report.json
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: go test + coverage
+        run: |
+          go test ./... -coverprofile=coverage.out -json > test.json
+          go tool cover -html=coverage.out -o coverage.html
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: test-reports
+          path: |
+            test.json
+            coverage.out
+            coverage.html
+
+  govulncheck:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: govulncheck
+        run: |
+          go install golang.org/x/vuln/cmd/govulncheck@latest
+          govulncheck -json ./... > govulncheck.json 2>&1 || true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: govulncheck-report
+          path: govulncheck.json
+
+  trivy-fs:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: fs
+          format: json
+          output: trivy-fs.json
+        continue-on-error: true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-fs-report
+          path: trivy-fs.json
+
+  sonar:
+    runs-on: ubuntu-latest
+    needs: [lint, govulncheck, trivy-fs]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # SonarCloud precisa do histórico completo para blame
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: test-reports
+
+      - uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        with:
+          args: >
+            -Dsonar.projectKey=sant125_gin-tattoo
+            -Dsonar.organization=sant125
+            -Dsonar.go.coverage.reportPaths=coverage.out
+            -Dsonar.go.tests.reportPaths=test.json
+            -Dsonar.qualitygate.wait=true
+
+  build-push:
+    runs-on: ubuntu-latest
+    needs: sonar
+    if: github.ref_name == 'main' || github.ref_name == 'developer'
+    outputs:
+      image_tag: ${{ steps.tag.outputs.value }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set image tag
+        id: tag
+        run: |
+          SHORT_SHA=$(git rev-parse --short HEAD)
+          if [ "${{ github.ref_name }}" = "main" ]; then
+            echo "value=${SHORT_SHA}" >> $GITHUB_OUTPUT
+          else
+            echo "value=dev-${SHORT_SHA}" >> $GITHUB_OUTPUT
+          fi
+
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ secrets.AWS_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push
+        run: |
+          docker build -t ${{ env.ECR_URL }}:${{ steps.tag.outputs.value }} .
+          docker push ${{ env.ECR_URL }}:${{ steps.tag.outputs.value }}
+
+      - name: Trivy image scan
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: ${{ env.ECR_URL }}:${{ steps.tag.outputs.value }}
+          format: json
+          output: trivy-image.json
+        continue-on-error: true
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: trivy-image-report
+          path: trivy-image.json
+
+  update-gitops:
+    runs-on: ubuntu-latest
+    needs: build-push
+    permissions:
+      id-token: write
+      contents: read
+    env:
+      DEPLOY_NS: ${{ github.ref_name == 'main' && 'prod' || 'homolog' }}
+      IMAGE_TAG: ${{ needs.build-push.outputs.image_tag }}
+    steps:
+      - name: Update manifest and push
+        run: |
+          git clone https://${{ secrets.GH_TOKEN }}@github.com/sant125/aws-devops.git /tmp/infra
+          cd /tmp/infra
+
+          # yq atualiza só o campo image — mais seguro que sed em manifests estruturados
+          yq e ".spec.template.spec.containers[0].image = \"${{ env.ECR_URL }}:${{ env.IMAGE_TAG }}\"" \
+            -i manifests/gin-tattoo-${{ env.DEPLOY_NS }}/deployment.yaml
+
+          git config user.email "actions@github.com"
+          git config user.name "GitHub Actions"
+          git commit -am "ci: gin-tattoo → ${{ env.IMAGE_TAG }} [${{ env.DEPLOY_NS }}]"
+          git push
+
+  zap:
+    runs-on: ubuntu-latest
+    needs: update-gitops
+    if: github.ref_name == 'developer'
+    steps:
+      - uses: zaproxy/action-baseline@v0.12.0
+        with:
+          # URL pública do homolog — ArgoCD já sincronizou antes deste job
+          target: ${{ secrets.HOMOLOG_URL }}
+          # Não aborta em alertas informativos — mesma semântica do -I no CLI
+          fail_action: false
+          artifact_name: zap-report
+          issue_title: 'ZAP Baseline — homolog'

@@ -133,7 +133,6 @@ jobs:
           args: >
             -Dsonar.projectKey=sant124_app-gingo
             -Dsonar.organization=sant124
-            -Dsonar.branch.name=${{ github.ref_name }}
             -Dsonar.go.coverage.reportPaths=coverage.out
             -Dsonar.go.tests.reportPaths=test.json
             -Dsonar.qualitygate.wait=true

@@ -131,8 +131,8 @@ jobs:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
         with:
           args: >
-            -Dsonar.projectKey=sant125_gin-tattoo
-            -Dsonar.organization=sant125
+            -Dsonar.projectKey=sant124_app-gingo
+            -Dsonar.organization=sant124
             -Dsonar.branch.name=${{ github.ref_name }}
             -Dsonar.go.coverage.reportPaths=coverage.out
             -Dsonar.go.tests.reportPaths=test.json

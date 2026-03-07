@@ -104,7 +104,8 @@ jobs:
           scan-type: fs
           format: json
           output: trivy-fs.json
-        continue-on-error: true
+          severity: CRITICAL,HIGH
+          exit-code: '1'
 
       - uses: actions/upload-artifact@v4
         if: always()
@@ -173,7 +174,8 @@ jobs:
           image-ref: ${{ env.ECR_URL }}:${{ steps.tag.outputs.value }}
           format: json
           output: trivy-image.json
-        continue-on-error: true
+          severity: CRITICAL,HIGH
+          exit-code: '1'
 
       - uses: actions/upload-artifact@v4
         if: always()

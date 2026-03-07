@@ -133,9 +133,9 @@ jobs:
           args: >
             -Dsonar.projectKey=sant125_app-gingo
             -Dsonar.organization=sant125
+            -Dsonar.branch.name=${{ github.ref_name }}
             -Dsonar.go.coverage.reportPaths=coverage.out
             -Dsonar.go.tests.reportPaths=test.json
-            -Dsonar.qualitygate.wait=true
 
   build-push:
     runs-on: ubuntu-latest

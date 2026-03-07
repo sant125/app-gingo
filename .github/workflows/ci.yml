@@ -12,6 +12,7 @@ on:
   push:
     branches:
       - main
+      - master
       - developer
       - 'feature/**'
 
@@ -138,7 +139,7 @@ jobs:
   build-push:
     runs-on: ubuntu-latest
     needs: sonar
-    if: github.ref_name == 'main' || github.ref_name == 'developer'
+    if: github.ref_name == 'main' || github.ref_name == 'master' || github.ref_name == 'developer'
     outputs:
       image_tag: ${{ steps.tag.outputs.value }}
     steps:
@@ -148,7 +149,7 @@ jobs:
         id: tag
         run: |
           SHORT_SHA=$(git rev-parse --short HEAD)
-          if [ "${{ github.ref_name }}" = "main" ]; then
+          if [ "${{ github.ref_name }}" = "main" ] || [ "${{ github.ref_name }}" = "master" ]; then
             echo "value=${SHORT_SHA}" >> $GITHUB_OUTPUT
           else
             echo "value=dev-${SHORT_SHA}" >> $GITHUB_OUTPUT
@@ -187,7 +188,7 @@ jobs:
       id-token: write
       contents: read
     env:
-      DEPLOY_NS: ${{ github.ref_name == 'main' && 'prod' || 'homolog' }}
+      DEPLOY_NS: ${{ (github.ref_name == 'main' || github.ref_name == 'master') && 'prod' || 'homolog' }}
       IMAGE_TAG: ${{ needs.build-push.outputs.image_tag }}
     steps:
       - name: Update manifest and push

@@ -20,10 +20,16 @@ RUN CGO_ENABLED=0 GOOS=linux go build -o gin-tattoo ./cmd/main.go
 # ── Runtime stage ──────────────────────────────────────────────────────────────
 FROM alpine:3.19
 
+RUN addgroup -S app && adduser -S app -G app
+
 WORKDIR /app
 
 COPY --from=builder /app/gin-tattoo .
 COPY --from=builder /app/static ./static
+
+RUN chown -R app:app /app
+
+USER app
 
 EXPOSE 8080
 

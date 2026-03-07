@@ -1,0 +1,7 @@
+.git
+.github
+*.md
+.env*
+coverage.out
+test.json
+trivy-*.json

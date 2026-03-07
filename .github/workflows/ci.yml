@@ -190,10 +190,11 @@ jobs:
     env:
       DEPLOY_NS: ${{ (github.ref_name == 'main' || github.ref_name == 'master') && 'prod' || 'homolog' }}
       IMAGE_TAG: ${{ needs.build-push.outputs.image_tag }}
+      GH_TOKEN: ${{ secrets.GH_TOKEN }}
     steps:
       - name: Update manifest and push
         run: |
-          git clone https://${{ secrets.GH_TOKEN }}@github.com/sant125/aws-devops.git /tmp/infra
+          git clone https://${GH_TOKEN}@github.com/sant125/aws-devops.git /tmp/infra
           cd /tmp/infra
 
           # yq atualiza só o campo image — mais seguro que sed em manifests estruturados

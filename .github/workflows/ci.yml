@@ -21,7 +21,7 @@ permissions:
   contents: read
 
 env:
-  ECR_URL: 123456789012.dkr.ecr.us-east-1.amazonaws.com/projetin-app
+  ECR_URL: 091855124125.dkr.ecr.us-east-1.amazonaws.com/projetin-app
   AWS_REGION: us-east-1
 
 jobs:

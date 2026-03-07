@@ -196,7 +196,7 @@ jobs:
     steps:
       - name: Update manifest and push
         run: |
-          git clone https://${GH_TOKEN}@github.com/sant125/aws-devops.git /tmp/infra
+          git clone https://${GH_TOKEN}@github.com/sant125/gin-tattoo.git /tmp/infra
           cd /tmp/infra
 
           # yq atualiza só o campo image — mais seguro que sed em manifests estruturados

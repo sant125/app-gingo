@@ -18,7 +18,7 @@ RUN swag init -g cmd/main.go -o docs
 RUN CGO_ENABLED=0 GOOS=linux go build -o gin-tattoo ./cmd/main.go
 
 # ── Runtime stage ──────────────────────────────────────────────────────────────
-FROM alpine:3.19
+FROM alpine:3.21
 
 RUN addgroup -S app && adduser -S app -G app
 

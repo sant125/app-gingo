@@ -214,8 +214,9 @@ jobs:
           git clone https://${GH_TOKEN}@github.com/sant125/gin-tattoo.git /tmp/infra
           cd /tmp/infra
 
-          # yq atualiza só o campo image — mais seguro que sed em manifests estruturados
-          yq e ".spec.template.spec.containers[0].image = \"${{ env.ECR_URL }}:${{ env.IMAGE_TAG }}\"" \
+          # select(.kind == "Deployment") garante que o yq não toque no Service
+          # quando Deployment e Service estão no mesmo arquivo multi-documento
+          yq e "(select(.kind == \"Deployment\") | .spec.template.spec.containers[0].image) = \"${{ env.ECR_URL }}:${{ env.IMAGE_TAG }}\"" \
             -i manifests/gin-tattoo-${{ env.DEPLOY_NS }}/deployment.yaml
 
           git config user.email "actions@github.com"

@@ -24,7 +24,7 @@ import (
 	swaggerfiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 
-	_ "github.com/santzin/gin-tattoo/docs"
+	_ "github.com/santzin/gin-tattoo/docs" // registra as rotas Swagger geradas pelo swag
 	appdb "github.com/santzin/gin-tattoo/internal/db"
 	"github.com/santzin/gin-tattoo/internal/handlers"
 	"github.com/santzin/gin-tattoo/internal/middleware"

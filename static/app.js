@@ -98,5 +98,5 @@ async function showCuriosity(id) {
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────
-loadStyles();
-loadCuriosities();
+await loadStyles();
+await loadCuriosities();

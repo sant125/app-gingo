@@ -58,11 +58,9 @@ func (h *H) GetCuriosity(c *gin.Context) {
 	}
 
 	var cur models.Curiosity
-	err = h.DB.QueryRow(c.Request.Context(),
+	if err := h.DB.QueryRow(c.Request.Context(),
 		"SELECT id, title, content, category FROM curiosities WHERE id = $1", id,
-	).Scan(&cur.ID, &cur.Title, &cur.Content, &cur.Category)
-
-	if err != nil {
+	).Scan(&cur.ID, &cur.Title, &cur.Content, &cur.Category); err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "curiosity not found"})
 		return
 	}

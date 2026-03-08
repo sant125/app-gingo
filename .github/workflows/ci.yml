@@ -16,10 +16,6 @@ on:
       - developer
       - 'feature/**'
 
-permissions:
-  id-token: write  # necessário para OIDC com AWS
-  contents: read
-
 env:
   ECR_URL: 091855124125.dkr.ecr.us-east-1.amazonaws.com/projetin-app
   AWS_REGION: us-east-1
@@ -28,6 +24,8 @@ jobs:
 
   lint:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -49,6 +47,8 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -74,6 +74,8 @@ jobs:
   govulncheck:
     runs-on: ubuntu-latest
     needs: test
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -96,6 +98,8 @@ jobs:
   trivy-fs:
     runs-on: ubuntu-latest
     needs: test
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
 
@@ -117,6 +121,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: [lint, govulncheck, trivy-fs]
     if: github.ref_name == 'main' || github.ref_name == 'master'
+    permissions:
+      contents: read
     steps:
       - uses: actions/checkout@v4
         with:
@@ -142,6 +148,9 @@ jobs:
   build-push:
     runs-on: ubuntu-latest
     needs: [lint, govulncheck, trivy-fs, sonar]
+    permissions:
+      id-token: write  # necessário para OIDC com AWS
+      contents: read
     if: |
       always() &&
       (github.ref_name == 'main' || github.ref_name == 'master' || github.ref_name == 'developer') &&
@@ -194,7 +203,6 @@ jobs:
     needs: build-push
     if: always() && needs.build-push.result == 'success'
     permissions:
-      id-token: write
       contents: read
     env:
       DEPLOY_NS: ${{ (github.ref_name == 'main' || github.ref_name == 'master') && 'prod' || 'homolog' }}
@@ -219,6 +227,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: update-gitops
     if: always() && needs.update-gitops.result == 'success' && github.ref_name == 'developer'
+    permissions:
+      contents: read
     steps:
       - uses: zaproxy/action-baseline@v0.12.0
         with:

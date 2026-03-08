@@ -58,11 +58,9 @@ func (h *H) GetStyle(c *gin.Context) {
 	}
 
 	var s models.Style
-	err = h.DB.QueryRow(c.Request.Context(),
+	if err := h.DB.QueryRow(c.Request.Context(),
 		"SELECT id, name, description, origin, popularity FROM styles WHERE id = $1", id,
-	).Scan(&s.ID, &s.Name, &s.Description, &s.Origin, &s.Popularity)
-
-	if err != nil {
+	).Scan(&s.ID, &s.Name, &s.Description, &s.Origin, &s.Popularity); err != nil {
 		c.JSON(http.StatusNotFound, gin.H{"error": "style not found"})
 		return
 	}

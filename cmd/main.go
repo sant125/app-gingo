@@ -43,7 +43,7 @@ func main() {
 		log.Fatalf("migrate: %v", err)
 	}
 
-	h := &handlers.H{DB: pool}
+	h := &handlers.H{DB: &handlers.PgxPool{Pool: pool}}
 
 	r := gin.Default()
 	r.Use(middleware.Metrics())

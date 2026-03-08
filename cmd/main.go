@@ -27,6 +27,7 @@ import (
 	_ "github.com/santzin/gin-tattoo/docs"
 	appdb "github.com/santzin/gin-tattoo/internal/db"
 	"github.com/santzin/gin-tattoo/internal/handlers"
+	"github.com/santzin/gin-tattoo/internal/middleware"
 )
 
 func main() {
@@ -45,6 +46,7 @@ func main() {
 	h := &handlers.H{DB: pool}
 
 	r := gin.Default()
+	r.Use(middleware.Metrics())
 
 	r.StaticFS("/static", http.Dir("./static"))
 	r.GET("/", func(c *gin.Context) { c.File("./static/index.html") })

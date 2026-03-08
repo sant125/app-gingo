@@ -219,7 +219,13 @@ jobs:
     runs-on: ubuntu-latest
     needs: update-gitops
     if: always() && needs.update-gitops.result == 'success' && github.ref_name == 'developer'
+    permissions:
+      contents: read
+      issues: write
     steps:
+      - name: Fix workspace permissions for ZAP container
+        run: chmod a+w ${{ github.workspace }}
+
       - uses: zaproxy/action-baseline@v0.12.0
         with:
           # URL pública do homolog — ArgoCD já sincronizou antes deste job
